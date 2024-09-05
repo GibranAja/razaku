@@ -86,7 +86,7 @@ export default {
 <style scoped>
 .navbar {
   display: flex;
-  font-size: 1.1rem;
+  font-size: 1.01rem;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
