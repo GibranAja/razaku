@@ -70,38 +70,72 @@ const goBack = () => {
 
 <style scoped>
 .case-category {
-  padding: 20px;
+  padding: 10px;
   margin-top: 120px;
 }
 
 .category-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
 .header-left {
+  /* display: flex; */
   align-items: center;
-  gap: 20px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .product-count {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #666;
 }
 
 .case-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
 .no-products {
   text-align: center;
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #666;
   margin-top: 50px;
+}
+
+@media (min-width: 768px) {
+  .case-category {
+    padding: 20px;
+  }
+
+  .category-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-left {
+    margin-bottom: 0;
+    gap: 20px;
+  }
+
+  .product-count {
+    font-size: 1.2rem;
+  }
+
+  .case-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .case-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 </style>
