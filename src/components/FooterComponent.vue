@@ -7,13 +7,13 @@
           <p class="tagline">Jangan Basic, Buat Casingmu Aesthetic</p>
         </div>
         <div class="social-icons">
-          <a href="#" class="icon" title="Instagram">
+          <a href="https://www.instagram.com/razaku.official/" target="#" class="icon" title="Instagram">
             <i class="fab fa-instagram"></i>
           </a>
-          <a href="#" class="icon" title="TikTok">
+          <a href="https://www.tiktok.com/@razaku.official" target="#" class="icon" title="TikTok">
             <i class="fab fa-tiktok"></i>
           </a>
-          <a href="#" class="icon" title="Shopee">
+          <a href="https://shopee.co.id/razakuofficial" target="#" class="icon" title="Shopee">
             <i class="fas fa-shopping-bag"></i>
           </a>
         </div>
