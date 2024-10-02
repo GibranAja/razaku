@@ -1,22 +1,31 @@
 <template>
-    <div class="card-container">
-      <div class="card">
-        <div class="card-image-container">
-          <img :src="imageUrl" :alt="title" class="card-image">
-          <div class="card-title-container">
-            <h2 class="card-title">{{ title }}</h2>
-          </div>
+  <div class="card-container" @click="navigateTo">
+    <div class="card">
+      <div class="card-image-container">
+        <img :src="imageUrl" :alt="title" class="card-image">
+        <div class="card-title-container">
+          <h2 class="card-title">{{ title }}</h2>
         </div>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  defineProps({
-    imageUrl: String,
-    title: String
-  })
-  </script>
+  </div>
+</template>
+
+<script setup>
+import { useRouter } from 'vue-router';
+
+const props = defineProps({
+  imageUrl: String,
+  title: String
+});
+
+const router = useRouter();
+
+const navigateTo = () => {
+  const route = `/case/${props.title.toLowerCase()}`;
+  router.push(route);
+};
+</script>
   
   <style scoped>
   .card-container {
