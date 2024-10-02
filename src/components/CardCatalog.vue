@@ -22,6 +22,9 @@
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
   
   .card-catalog:hover {
@@ -30,22 +33,43 @@
   
   .card-image {
     width: 100%;
-    height: 200px;
+    height: 150px;
     object-fit: cover;
   }
   
   .card-content {
-    padding: 15px;
+    padding: 12px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
   }
   
   .card-title {
-    margin: 0 0 10px;
-    font-size: 1.2rem;
+    margin: 0 0 8px;
+    font-size: 1rem;
   }
   
   .card-description {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: #666;
+  }
+  
+  @media (min-width: 768px) {
+    .card-image {
+      height: 200px;
+    }
+  
+    .card-content {
+      padding: 15px;
+    }
+  
+    .card-title {
+      font-size: 1.2rem;
+    }
+  
+    .card-description {
+      font-size: 0.9rem;
+    }
   }
   </style>
