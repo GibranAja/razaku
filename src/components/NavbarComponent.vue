@@ -18,7 +18,7 @@
         <li><a href="#products" @click="closeMenu">Produk</a></li>
         <li><a href="#testimoni" @click="closeMenu">Testimoni</a></li>
       </ul>
-      <ReusableButton text="CS" icon="fas fa-headset" />
+      <ReusableButton text="CS" icon="fas fa-headset" @click="openWhatsApp" />
     </div>
   </nav>
 </template>
@@ -64,6 +64,12 @@ export default {
       lastScrollPosition.value = currentScrollPosition
     }
 
+    const openWhatsApp = () => {
+      const phoneNumber = '62881012016987'
+      const whatsappUrl = `https://wa.me/${phoneNumber}`
+      window.open(whatsappUrl, '_blank')
+    }
+
     onMounted(() => {
       window.addEventListener('scroll', handleScroll)
     })
@@ -77,7 +83,8 @@ export default {
       isScrolled,
       isHidden,
       toggleMenu,
-      closeMenu
+      closeMenu,
+      openWhatsApp
     }
   }
 }
