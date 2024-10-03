@@ -14,8 +14,8 @@
     </div>
     <div v-if="caseItems.length > 0" class="case-grid">
       <CardCatalog
-        v-for="(item, index) in caseItems"
-        :key="index"
+        v-for="item in caseItems"
+        :key="item.title"
         :image-url="item.imageUrl"
         :title="item.title"
         :description="item.description"
@@ -45,28 +45,30 @@ const capitalizedCategory = computed(() => {
 
 const caseItems = ref([]);
 
-const images = import.meta.glob('@/image/casing/**/*.jpg');
+const images = import.meta.glob('@/image/casing/**/*.jpg', { eager: true });
 
 onMounted(async () => {
-  const categoryImages = Object.keys(images).filter(path => 
+  const categoryImages = Object.entries(images).filter(([path]) => 
     path.includes(`/casing/${category.value}/`)
   );
 
-  for (const imagePath of categoryImages) {
-    const imageModule = await images[imagePath]();
+  const itemPromises = categoryImages.map(async ([imagePath, imageModule]) => {
     const fileName = imagePath.split('/').pop().split('.')[0];
-    caseItems.value.push({
+    return {
       imageUrl: imageModule.default,
       title: `${capitalizedCategory.value} ${fileName}`,
       description: `This is a ${category.value} case design ${fileName}.`
-    });
-  }
+    };
+  });
+
+  caseItems.value = await Promise.all(itemPromises);
 });
 
 const goBack = () => {
   router.go(-1);
 };
 </script>
+
 
 <style scoped>
 .case-category {
