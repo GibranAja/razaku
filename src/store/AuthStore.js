@@ -1,175 +1,139 @@
-import { auth, db } from '../config/firebase.js'
-import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut,
-  signInWithEmailAndPassword
-} from 'firebase/auth'
-import { addDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-// import DialogComponents from '@/components/dashboard/DialogComponents.vue'
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged 
+} from 'firebase/auth'
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'
+import { auth, db } from '../config/firebase'
 
 export const useAuthStore = defineStore('auth', () => {
-  const formInput = ref(false)
   const router = useRouter()
-
+  const toast = useToast()
   const currentUser = ref(null)
   const userCollection = collection(db, 'users')
+  const isLoading = ref(true) // Tambahkan ini untuk handling loading state
 
   const user = reactive({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    profilePhoto: ''
   })
-
+  
+  const isLoggedIn = ref(false)
   const isError = ref(false)
-  const message = ref(null)
+  const message = ref('')
 
-  // Toast
-  const toast = useToast()
-
-  // Dialog
-  const dialogLogout = ref(false)
-
-  const userHandler = () => {
+  // Fungsi untuk inisialisasi state auth
+  const initializeAuthState = () => {
     onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const queryId = query(userCollection, where('uid', '==', user.uid))
-        const queryData = await getDocs(queryId)
+      isLoading.value = true // Set loading ke true saat memulai pengecekan
+      try {
+        if (user) {
+          const queryId = query(userCollection, where('uid', '==', user.uid))
+          const queryData = await getDocs(queryId)
 
-        if (!queryData.empty) {
-          const queryUser = queryData.docs[0].data()
-          currentUser.value = {
-            email: user.email,
-            id: user.uid,
-            name: queryUser.name,
-            isAdmin: queryUser.isAdmin
+          if (!queryData.empty) {
+            const queryUser = queryData.docs[0].data()
+            currentUser.value = {
+              email: user.email,
+              id: user.uid,
+              name: queryUser.name,
+              isAdmin: queryUser.isAdmin,
+              profilePhoto: queryUser.profilePhoto || ''
+            }
+            isLoggedIn.value = true
+          } else {
+            console.error('User document not found in Firestore')
+            currentUser.value = null
+            isLoggedIn.value = false
           }
         } else {
-          console.error('User document not found in Firestore')
           currentUser.value = null
+          isLoggedIn.value = false
         }
-      } else {
+      } catch (error) {
+        console.error('Error initializing auth state:', error)
         currentUser.value = null
+        isLoggedIn.value = false
+      } finally {
+        isLoading.value = false // Set loading ke false setelah selesai
       }
     })
   }
 
-  const confirmLogout = () => {
-    dialogLogout.value = true
-  }
-
-  const logOutUser = async () => {
-    try {
-      await signOut(auth)
-      dialogLogout.value = false
-      router.push({ name: 'HomePublic' }).then(() => {
-        toast.success(`Kamu berhasil logout!`, {
-          timeout: 3000,
-          position: "top-right",
-          pauseOnHover: false
-        })
-      })
-    } catch (error) {
-      console.error('Logout error:', error)
-      isError.value = true
-      message.value = 'Failed to log out. Please try again.'
-    }
-  }
-
   const authUser = async (isLogin = false) => {
     try {
-      isError.value = false
-      message.value = null
-
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, user.email, user.password)
-      } else {
-        const { user: createdUser } = await createUserWithEmailAndPassword(
+        // Login
+        const userCredential = await signInWithEmailAndPassword(
           auth,
           user.email,
           user.password
         )
-        await addDoc(userCollection, {
-          name: user.name,
-          isAdmin: false,
-          uid: createdUser.uid
-        })
-      }
-
-      const queryId = query(userCollection, where('uid', '==', auth.currentUser.uid))
-      const queryData = await getDocs(queryId)
-
-      if (!queryData.empty) {
-        const queryUser = queryData.docs[0].data()
-        currentUser.value = {
-          email: auth.currentUser.email,
-          id: auth.currentUser.uid,
-          name: queryUser.name,
-          isAdmin: queryUser.isAdmin
-        }
-
-        // Toaster
-        toast.success(`Hai, ${currentUser.value.name}!`, {
-          timeout: 3000,
-          position: "top-right",
-        })
-
-        // Route 
-        if (queryUser.isAdmin) {
-          router.push({ name: 'Home' })
-        } else {
-          router.push({ name: 'HomePublic' })
+        if (userCredential) {
+          isLoggedIn.value = true
+          toast.success("Successfully logged in!")
+          router.push('/')
         }
       } else {
-        console.error('User document not found in Firestore')
-        currentUser.value = null
-        router.push({ name: 'HomePublic' })
+        // Register
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          user.email,
+          user.password
+        )
+        if (userCredential) {
+          await addDoc(collection(db, 'users'), {
+            uid: userCredential.user.uid,
+            name: user.name,
+            email: user.email,
+            profilePhoto: user.profilePhoto || '',
+            isAdmin: false
+          })
+          toast.success("Successfully registered!")
+          router.push('/login')
+        }
       }
-
-      user.name = ''
-      user.email = ''
-      user.password = ''
-
     } catch (error) {
       isError.value = true
-
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          message.value = 'Login Failed : Email or Password wrong'
-          break
-        case 'auth/invalid-email':
-          message.value = 'Email not valid.'
-          break
-        case 'auth/email-already-in-use':
-          message.value = 'Register failed: Email Registered'
-          break
-        case 'auth/weak-password':
-          message.value = 'Register Failed: Minimal Password 8 Characters'
-          break
-        default:
-          message.value = `${isLogin ? 'Login' : 'Register'} Failed: ${error.message}`
-      }
-
-      console.error('Authentication error:', error)
+      message.value = error.message
+      toast.error(error.message)
     }
   }
 
+  const logoutUser = async () => {
+    try {
+      await signOut(auth)
+      currentUser.value = null
+      isLoggedIn.value = false
+      toast.success("Successfully logged out!")
+      router.push('/login')
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
+
+  const clearError = () => {
+    isError.value = false
+    message.value = ''
+  }
+
   return {
-    formInput,
     user,
-    authUser,
-    userHandler,
-    currentUser,
-    logOutUser,
+    isLoggedIn,
     isError,
     message,
-    dialogLogout,
-    confirmLogout
+    currentUser,
+    isLoading,
+    authUser,
+    logoutUser,
+    clearError,
+    initializeAuthState
   }
 })

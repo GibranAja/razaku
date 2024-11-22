@@ -10,7 +10,6 @@ export const useShippingStore = defineStore('shipping', () => {
   const error = ref(null)
 
   // Actions
-
   const fetchProvinces = async () => {
     loading.value = true
     try {

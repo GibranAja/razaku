@@ -1,13 +1,22 @@
 <template>
-  <div id="app">
-    <router-view></router-view>
+  <div>
+    <RouterView v-if="!authStore.isLoading" />
+    <div v-else>
+      Loading... <!-- Atau komponen loading yang lebih bagus -->
+    </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'App'
-}
+<script setup>
+import { onMounted } from 'vue'
+import { useAuthStore } from '@/store/AuthStore.js'
+import { RouterView } from 'vue-router'
+
+const authStore = useAuthStore()
+
+onMounted(() => {
+  authStore.initializeAuthState()
+})
 </script>
 
 <style>
