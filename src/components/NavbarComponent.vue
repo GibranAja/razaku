@@ -38,17 +38,24 @@
           <ul>
             <li @click="openProfileModal">Profile</li>
             <li>Settings</li>
-            <li @click="handleLogout">Logout</li>
+            <li @click="openLogoutModal">Logout</li>
           </ul>
         </div>
       </div>
     </div>
   </nav>
 
-  <!-- Add Modal Profile Component -->
+  <!-- Profile Modal -->
   <ModalProfile 
     v-if="showProfileModal"
     @close="closeProfileModal"
+  />
+
+  <!-- Logout Modal -->
+  <LogoutModal
+    :show="showLogoutModal"
+    :onLogout="handleLogout"
+    @close="closeLogoutModal"
   />
 </template>
 
@@ -59,12 +66,14 @@ import { storeToRefs } from 'pinia'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { auth, db } from '@/config/firebase'
 import ModalProfile from './ModalProfileComponent.vue'
+import LogoutModal from './LogoutModalComponent.vue'
 
-const defaultAvatar = '/images/default-avatar.png' // Ubah path sesuai dengan struktur project
+const defaultAvatar = '/images/default-avatar.png'
 
 const authStore = useAuthStore()
 const { isLoggedIn, currentUser } = storeToRefs(authStore)
 
+// Refs for UI states
 const isMenuOpen = ref(false)
 const isScrolled = ref(false)
 const isHidden = ref(false)
@@ -72,12 +81,14 @@ const lastScrollPosition = ref(0)
 const showUserMenu = ref(false)
 const userProfilePhoto = ref(null)
 const showProfileModal = ref(false)
+const showLogoutModal = ref(false)
 
 // Computed property untuk menampilkan foto
 const displayedPhoto = computed(() => {
   return userProfilePhoto.value || currentUser.value?.profilePhoto || defaultAvatar
 })
 
+// Menu toggles
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
   document.body.classList.toggle('no-scroll', isMenuOpen.value)
@@ -92,11 +103,7 @@ const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value
 }
 
-const handleLogout = async () => {
-  await authStore.logoutUser()
-  showUserMenu.value = false
-}
-
+// Profile modal controls
 const openProfileModal = () => {
   showProfileModal.value = true
   showUserMenu.value = false
@@ -108,6 +115,29 @@ const closeProfileModal = () => {
   document.body.classList.remove('no-scroll')
 }
 
+// Logout modal controls
+const openLogoutModal = () => {
+  showLogoutModal.value = true
+  showUserMenu.value = false
+  document.body.classList.add('no-scroll')
+}
+
+const closeLogoutModal = () => {
+  showLogoutModal.value = false
+  document.body.classList.remove('no-scroll')
+}
+
+// Logout handling
+const handleLogout = async () => {
+  try {
+    await authStore.logoutUser()
+    closeLogoutModal()
+  } catch (error) {
+    console.error('Logout failed:', error)
+  }
+}
+
+// Scroll handling
 const handleScroll = () => {
   const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop
   isScrolled.value = currentScrollPosition > 0
@@ -120,7 +150,7 @@ const handleScroll = () => {
   lastScrollPosition.value = currentScrollPosition
 }
 
-// Fetch user profile photo menggunakan collection query
+// Fetch user profile photo
 const fetchUserProfilePhoto = async () => {
   if (isLoggedIn.value) {
     const user = auth.currentUser
@@ -141,11 +171,12 @@ const fetchUserProfilePhoto = async () => {
   }
 }
 
-// Listen for profile updates
+// Profile update handler
 const handleProfileUpdate = () => {
   fetchUserProfilePhoto()
 }
 
+// Lifecycle hooks
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
   window.addEventListener('profile-updated', handleProfileUpdate)
@@ -328,13 +359,6 @@ onUnmounted(() => {
   list-style: none;
   padding: 0;
   margin: 0;
-}
-
-.user-menu a {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  width: 100%;
 }
 
 .user-menu li {

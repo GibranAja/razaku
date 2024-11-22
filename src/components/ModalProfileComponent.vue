@@ -45,7 +45,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { doc, updateDoc, getDoc, query, where, getDocs, collection } from 'firebase/firestore'
+import { doc, updateDoc, query, where, getDocs, collection } from 'firebase/firestore'
 import { auth, db } from '@/config/firebase'
 import { useToast } from 'vue-toastification'
 import { useAuthStore } from '@/store/AuthStore'
@@ -53,7 +53,7 @@ import { useAuthStore } from '@/store/AuthStore'
 const authStore = useAuthStore()
 const { currentUser } = authStore
 const emit = defineEmits(['close'])
-const defaultAvatar = '/image/default-avatar.png' // Make sure this path is correct
+const defaultAvatar = '/image/default-avatar.png'
 const toast = useToast()
 
 const fileInput = ref(null)
@@ -86,7 +86,7 @@ const handleFileUpload = async (event) => {
     reader.onload = async (e) => {
       const base64Image = e.target.result
       
-      // Update in Firestore using collection query
+      // Buat Update Firestore Collection
       const user = auth.currentUser
       if (user) {
         const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid))
