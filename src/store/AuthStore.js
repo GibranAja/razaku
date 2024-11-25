@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const toast = useToast()
   const currentUser = ref(null)
   const userCollection = collection(db, 'users')
-  const isLoading = ref(true) // Tambahkan ini untuk handling loading state
+  const isLoading = ref(true)
 
   const user = reactive({
     name: '',
@@ -29,10 +29,36 @@ export const useAuthStore = defineStore('auth', () => {
   const isError = ref(false)
   const message = ref('')
 
-  // Fungsi untuk inisialisasi state auth
+  // Fungsi untuk mengarahkan user berdasarkan role dan current path
+  const redirectBasedOnRole = async (isAdmin, currentPath) => {
+    // Tambahkan pencegahan akses login/register jika sudah login
+    if (currentPath === '/login' || currentPath === '/register') {
+      await router.push({ name: 'Home' })
+      toast.info('You are already logged in')
+      return
+    }
+
+    if (isAdmin) {
+      // Jika admin mencoba mengakses halaman admin, biarkan
+      if (currentPath.startsWith('/admin')) {
+        toast.success('Welcome back, Admin!')
+        return
+      }
+      // Jika dari halaman lain, arahkan ke dashboard
+      await router.push({ name: 'DashboardAdmin' })
+      toast.success('Welcome back, Admin!')
+    } else {
+      // Jika user biasa mencoba akses halaman admin, redirect ke home
+      if (currentPath.startsWith('/admin')) {
+        await router.push({ name: 'Home' })
+      }
+      toast.success('Welcome back!')
+    }
+  }
+
   const initializeAuthState = () => {
     onAuthStateChanged(auth, async (user) => {
-      isLoading.value = true // Set loading ke true saat memulai pengecekan
+      isLoading.value = true
       try {
         if (user) {
           const queryId = query(userCollection, where('uid', '==', user.uid))
@@ -48,46 +74,93 @@ export const useAuthStore = defineStore('auth', () => {
               profilePhoto: queryUser.profilePhoto || ''
             }
             isLoggedIn.value = true
+
+            // Check current path when auth state initializes
+            const currentPath = router.currentRoute.value.path
+            await redirectBasedOnRole(queryUser.isAdmin, currentPath)
           } else {
             console.error('User document not found in Firestore')
-            currentUser.value = null
-            isLoggedIn.value = false
+            await handleAuthFailure()
           }
         } else {
-          currentUser.value = null
-          isLoggedIn.value = false
+          await handleAuthFailure()
         }
       } catch (error) {
         console.error('Error initializing auth state:', error)
-        currentUser.value = null
-        isLoggedIn.value = false
+        await handleAuthFailure()
       } finally {
-        isLoading.value = false // Set loading ke false setelah selesai
+        isLoading.value = false
       }
     })
   }
 
+  const handleAuthFailure = async () => {
+    currentUser.value = null
+    isLoggedIn.value = false
+    const currentPath = router.currentRoute.value.path
+    
+    // Jika user mencoba akses halaman admin tanpa auth
+    if (currentPath.startsWith('/admin')) {
+      await router.push({ name: 'notFound' })
+    }
+  }
+
   const authUser = async (isLogin = false) => {
     try {
+      isLoading.value = true
+      isError.value = false
+      message.value = ''
+
       if (isLogin) {
+        // Tambahkan pengecekan login di sini
+        if (isLoggedIn.value) {
+          await router.push({ name: 'Home' })
+          toast.info('You are already logged in')
+          return
+        }
+
         // Login
         const userCredential = await signInWithEmailAndPassword(
           auth,
           user.email,
           user.password
         )
+        
         if (userCredential) {
-          isLoggedIn.value = true
-          toast.success("Successfully logged in!")
-          router.push('/')
+          const queryId = query(userCollection, where('uid', '==', userCredential.user.uid))
+          const queryData = await getDocs(queryId)
+
+          if (!queryData.empty) {
+            const userData = queryData.docs[0].data()
+            currentUser.value = {
+              email: userCredential.user.email,
+              id: userCredential.user.uid,
+              name: userData.name,
+              isAdmin: userData.isAdmin,
+              profilePhoto: userData.profilePhoto || ''
+            }
+            isLoggedIn.value = true
+            
+            // Get current path before redirect
+            const currentPath = router.currentRoute.value.path
+            await redirectBasedOnRole(userData.isAdmin, currentPath)
+          }
         }
       } else {
+        // Tambahkan pengecekan register di sini
+        if (isLoggedIn.value) {
+          await router.push({ name: 'Home' })
+          toast.info('You are already logged in')
+          return
+        }
+
         // Register
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           user.email,
           user.password
         )
+        
         if (userCredential) {
           await addDoc(collection(db, 'users'), {
             uid: userCredential.user.uid,
@@ -96,26 +169,55 @@ export const useAuthStore = defineStore('auth', () => {
             profilePhoto: user.profilePhoto || '',
             isAdmin: false
           })
-          toast.success("Successfully registered!")
-          router.push('/login')
+          toast.success("Registration successful! Please login.")
+          await router.push('/login')
         }
       }
+
+      // Reset form
+      user.name = ''
+      user.email = ''
+      user.password = ''
+      user.profilePhoto = ''
+
     } catch (error) {
       isError.value = true
-      message.value = error.message
-      toast.error(error.message)
+      switch (error.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          message.value = 'Invalid email or password'
+          break
+        case 'auth/email-already-in-use':
+          message.value = 'Email is already registered'
+          break
+        case 'auth/invalid-email':
+          message.value = 'Invalid email format'
+          break
+        case 'auth/weak-password':
+          message.value = 'Password should be at least 6 characters'
+          break
+        default:
+          message.value = error.message
+      }
+      toast.error(message.value)
+    } finally {
+      isLoading.value = false
     }
   }
 
   const logoutUser = async () => {
     try {
+      isLoading.value = true
       await signOut(auth)
       currentUser.value = null
       isLoggedIn.value = false
       toast.success("Successfully logged out!")
-      router.push('/login')
+      await router.push('/login')
     } catch (error) {
       toast.error(error.message)
+    } finally {
+      isLoading.value = false
     }
   }
 
