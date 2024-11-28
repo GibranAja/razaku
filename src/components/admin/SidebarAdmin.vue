@@ -44,7 +44,7 @@ const items = ref([
   { text: 'Dashboard', icon: 'fas fa-home', pathName: 'DashboardAdmin' },
   { text: 'Orders', icon: 'fas fa-shopping-cart', pathName: 'OrderCasing' },
   { text: 'Casing', icon: 'fas fa-mobile-alt', pathName: 'CasingView' },
-  { text: 'Voucher', icon: 'fas fa-tag', pathName: 'VoucherView' },
+  { text: 'Theme', icon: 'fas fa-swatchbook', pathName: 'ThemeView' },
   { text: 'Home', icon: 'fas fa-arrow-left', pathName: 'Home' }
 ])
 </script>

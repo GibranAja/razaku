@@ -1,95 +1,82 @@
 <template>
-  <div class="casing-catalog-container">
-    <div class="catalog-header">
-      <h1 class="gradient-text">Casing Catalog</h1>
-      <div class="header-actions">
-        <button @click="openCreateModal" class="btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="16"></line>
-            <line x1="8" y1="12" x2="16" y2="12"></line>
-          </svg>
-          Add New Casing
-        </button>
-        <div class="search-sort-wrapper">
-          <div class="search-container">
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Search casings..." 
-              class="search-input"
-              @input="filterCasings"
-            />
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    <div class="theme-catalog-container">
+      <div class="catalog-header">
+        <h1 class="gradient-text">Theme Catalog</h1>
+        <div class="header-actions">
+          <button @click="openCreateModal" class="btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
+            Add New Theme
+          </button>
+          <div class="search-sort-wrapper">
+            <div class="search-container">
+              <input 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="Search themes..." 
+                class="search-input"
+                @input="filterThemes"
+              />
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+            <select v-model="sortOption" @change="sortThemes" class="sort-select">
+              <option value="newest">Newest</option>
+              <option value="name-asc">Name: A to Z</option>
+              <option value="name-desc">Name: Z to A</option>
+            </select>
           </div>
-          <select v-model="sortOption" @change="sortCasings" class="sort-select">
-            <option value="newest">Newest</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="discount">Highest Discount</option>
-          </select>
         </div>
       </div>
-    </div>
-
-    <!-- Modal and other existing sections remain the same -->
-    <div v-if="showCreateModal" class="modal-overlay" @click.self="closeCreateModal">
-      <div class="modal-content card-elevated" @click.stop>
-        <button class="modal-close" @click="closeCreateModal">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-        <CreateCasingComponent 
-          :initial-data="editingCasing" 
-          @submit="handleModalSubmit"
-        />
-      </div>
-    </div>
-
-    <!-- Loading Indicator -->
-    <div v-if="isLoading" class="loading-container">
-      <div class="loader"></div>
-      <p class="loading-text">Loading Casings...</p>
-    </div>
-
-    <!-- Casing Grid -->
-    <div v-else-if="displayedCasings.length" class="casing-grid">
-      <div 
-        v-for="item in displayedCasings" 
-        :key="item.id" 
-        class="casing-card card-hover"
-      >
-        <div class="card-image-container">
-          <img 
-            :src="item.imageBase64" 
-            :alt="item.name" 
-            class="card-image" 
-            @error="handleImageError"
+  
+      <!-- Modal -->
+      <div v-if="showCreateModal" class="modal-overlay" @click.self="closeCreateModal">
+        <div class="modal-content card-elevated" @click.stop>
+          <button class="modal-close" @click="closeCreateModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <CreateThemeComponent 
+            :initial-data="editingTheme" 
+            @submit="handleModalSubmit"
           />
         </div>
-        <div class="card-content">
-          <h3 class="card-title">{{ item.name }}</h3>
-          <p class="card-description">{{ item.description }}</p>
-
-          <div class="card-pricing">
-            <div class="price-container">
-              <p v-if="item.discount > 0" class="original-price">
-                Rp {{ item.price.toLocaleString() }}
-              </p>
-              <p class="final-price">Rp {{ item.finalPrice.toLocaleString() }}</p>
-              <span v-if="item.discount > 0" class="discount-badge">
-                {{ item.discount }}% OFF
-              </span>
-            </div>
-
+      </div>
+  
+      <!-- Loading Indicator -->
+      <div v-if="isLoading" class="loading-container">
+        <div class="loader"></div>
+        <p class="loading-text">Loading Themes...</p>
+      </div>
+  
+      <!-- Theme Grid -->
+      <div v-else-if="displayedThemes.length" class="theme-grid">
+        <div 
+          v-for="item in displayedThemes" 
+          :key="item.id" 
+          class="theme-card card-hover"
+        >
+          <div class="card-image-container">
+            <img 
+              :src="item.imageBase64" 
+              :alt="item.name" 
+              class="card-image" 
+              @error="handleImageError"
+            />
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">{{ item.name }}</h3>
+  
             <div class="card-actions">
               <button 
-                @click="editCasing(item)" 
+                @click="editTheme(item)" 
                 class="action-btn edit-btn" 
                 title="Edit"
               >
@@ -99,7 +86,7 @@
                 </svg>
               </button>
               <button 
-                @click="deleteCasing(item.id)" 
+                @click="deleteTheme(item.id)" 
                 class="action-btn delete-btn" 
                 title="Delete"
               >
@@ -114,139 +101,126 @@
           </div>
         </div>
       </div>
+  
+      <!-- Empty State -->
+      <div v-else class="empty-state card-elevated">
+        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+          <line x1="7" y1="7" x2="7.01" y2="7"></line>
+        </svg>
+        <p>No themes found. Add your first theme!</p>
+        <button @click="openCreateModal" class="btn-secondary">
+          Add Theme
+        </button>
+      </div>
+  
+      <!-- Load More -->
+      <div v-if="hasMore && !isLoading" class="load-more-container">
+        <button 
+          @click="loadMoreThemes" 
+          class="btn-outline"
+        >
+          Load More Themes
+        </button>
+      </div>
     </div>
-
-    <!-- Empty State -->
-    <div v-else class="empty-state card-elevated">
-      <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
-        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-        <line x1="7" y1="7" x2="7.01" y2="7"></line>
-      </svg>
-      <p>No casings found. Add your first casing!</p>
-      <button @click="openCreateModal" class="btn-secondary">
-        Add Casing
-      </button>
-    </div>
-
-    <!-- Load More -->
-    <div v-if="hasMore && !isLoading" class="load-more-container">
-      <button 
-        @click="loadMoreCasings" 
-        class="btn-outline"
-      >
-        Load More Casings
-      </button>
-    </div>
-  </div>
-</template>
-
-<script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useCasingStore } from '@/store/CasingStore'
-import CreateCasingComponent from '@/components/admin/CreateCasingComponent.vue'
-
-// Store and Refs
-const casingStore = useCasingStore()
-const { 
-  casingData, 
-  isLoading, 
-  hasMore 
-} = storeToRefs(casingStore)
-
-const { 
-  fetchCasings, 
-  deleteHandling 
-} = casingStore
-
-// Modal and Editing State
-const showCreateModal = ref(false)
-const editingCasing = ref(null)
-
-// Search and Sort
-const searchQuery = ref('')
-const sortOption = ref('newest')
-const displayedCasings = computed(() => {
-  let results = casingData.value
-
-  // Search Filter
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    results = results.filter(item => 
-      item.name.toLowerCase().includes(query) || 
-      item.description.toLowerCase().includes(query)
-    )
+  </template>
+  
+  <script setup>
+  import { ref, onMounted, onUnmounted, computed } from 'vue'
+  import { storeToRefs } from 'pinia'
+  import { useThemeStore } from '@/store/ThemeStore'
+  import CreateThemeComponent from '@/components/admin/CreateThemeComponent.vue'
+  
+  // Store and Refs
+  const themeStore = useThemeStore()
+  const { 
+    themeData, 
+    isLoading, 
+    hasMore 
+  } = storeToRefs(themeStore)
+  
+  const { 
+    fetchThemes, 
+    deleteHandling 
+  } = themeStore
+  
+  // Modal and Editing State
+  const showCreateModal = ref(false)
+  const editingTheme = ref(null)
+  
+  // Search and Sort
+  const searchQuery = ref('')
+  const sortOption = ref('newest')
+  const displayedThemes = computed(() => {
+    let results = themeData.value
+  
+    // Search Filter
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase()
+      results = results.filter(item => 
+        item.name.toLowerCase().includes(query)
+      )
+    }
+  
+    // Sort Logic
+    switch(sortOption.value) {
+      case 'name-asc':
+        return results.sort((a, b) => a.name.localeCompare(b.name))
+      case 'name-desc':
+        return results.sort((a, b) => b.name.localeCompare(a.name))
+      default:
+        return results.sort((a, b) => b.createdAt - a.createdAt)
+    }
+  })
+  
+  // Methods
+  const loadMoreThemes = () => {
+    if (!isLoading.value && hasMore.value) {
+      fetchThemes()
+    }
   }
-
-  // Sort Logic
-  switch(sortOption.value) {
-    case 'price-low':
-      return results.sort((a, b) => a.finalPrice - b.finalPrice)
-    case 'price-high':
-      return results.sort((a, b) => b.finalPrice - a.finalPrice)
-    case 'discount':
-      return results.sort((a, b) => b.discount - a.discount)
-    default:
-      return results.sort((a, b) => b.createdAt - a.createdAt)
+  
+  const openCreateModal = () => {
+    editingTheme.value = null
+    showCreateModal.value = true
   }
-})
-
-// Methods
-const loadMoreCasings = () => {
-  if (!isLoading.value && hasMore.value) {
-    fetchCasings()
+  
+  const closeCreateModal = () => {
+    showCreateModal.value = false
   }
-}
-
-const openCreateModal = () => {
-  editingCasing.value = null
-  showCreateModal.value = true
-}
-
-const closeCreateModal = () => {
-  showCreateModal.value = false
-}
-
-const editCasing = (item) => {
-  editingCasing.value = { ...item }
-  showCreateModal.value = true
-}
-
-const deleteCasing = (id) => {
-  if (confirm('Are you sure you want to delete this casing?')) {
-    deleteHandling(id)
+  
+  const editTheme = (item) => {
+    editingTheme.value = { ...item }
+    showCreateModal.value = true
   }
-}
-
-const handleModalSubmit = () => {
-  closeCreateModal();
-  fetchCasings(10, true);
-};
-
-const handleImageError = (event) => {
-  event.target.src = '/path/to/default/image.png' // Fallback image
-}
-
-const filterCasings = () => {
-  // Trigger computed property
-}
-
-const sortCasings = () => {
-  // Trigger computed property
-}
-
-// Lifecycle Hooks
-onMounted(async () => {
-  await fetchCasings(10, true)
-})
-
-onUnmounted(() => {
-  // Optional: Reset store state if needed
-  casingStore.resetStore()
-})
-</script>
-
-<style scoped>
+  
+  const deleteTheme = (id) => {
+    if (confirm('Are you sure you want to delete this theme?')) {
+      deleteHandling(id)
+    }
+  }
+  
+  const handleModalSubmit = () => {
+    closeCreateModal();
+    fetchThemes(10, true);
+  };
+  
+  const handleImageError = (event) => {
+    event.target.src = '/path/to/default/image.png' // Fallback image
+  }
+  
+  // Lifecycle Hooks
+  onMounted(async () => {
+    await fetchThemes(10, true)
+  })
+  
+  onUnmounted(() => {
+    themeStore.resetStore()
+  })
+  </script>
+  
+  <style scoped>
 :root {
   --primary-color: #3B82F6;
   --secondary-color: #10B981;

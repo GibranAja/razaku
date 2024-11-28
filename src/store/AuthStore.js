@@ -29,15 +29,14 @@ export const useAuthStore = defineStore('auth', () => {
   const isError = ref(false)
   const message = ref('')
 
-  // Fungsi untuk mengarahkan user berdasarkan role dan current path
   const redirectBasedOnRole = async (isAdmin, currentPath) => {
-    // Tambahkan pencegahan akses login/register jika sudah login
+    // Hanya redirect dan munculkan toast jika sedang di halaman login atau register
     if (currentPath === '/login' || currentPath === '/register') {
       await router.push({ name: 'Home' })
-      toast.info('You are already logged in')
+      // toast.info('You are already logged in')
       return
     }
-
+  
     if (isAdmin) {
       // Jika admin mencoba mengakses halaman admin, biarkan
       if (currentPath.startsWith('/admin')) {
@@ -52,7 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (currentPath.startsWith('/admin')) {
         await router.push({ name: 'Home' })
       }
-      toast.success('Welcome back!')
+      // toast.success('Welcome back!')
     }
   }
 

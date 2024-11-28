@@ -14,7 +14,7 @@ import AdminLayout from '../layouts/AdminLayout.vue'
 // Admin Views
 import DashboardView from '../views/admin/DashboardView.vue'
 import CasingView from '../views/admin/CasingView.vue'
-import VoucherView from '../views/admin/VoucherView.vue'
+import ThemeView from '../views/admin/ThemeView.vue'
 import OrderView from '../views/admin/OrderView.vue'
 
 const adminGuard = async (to, from, next) => {
@@ -97,9 +97,9 @@ const router = createRouter({
           meta: { requiresAdmin: true }
         },
         {
-          path: 'voucher',
-          name: 'VoucherView',
-          component: VoucherView,
+          path: 'theme',
+          name: 'ThemeView',
+          component: ThemeView,
           meta: { requiresAdmin: true }
         }
       ]

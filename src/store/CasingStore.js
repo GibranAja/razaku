@@ -1,9 +1,21 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { db } from '../config/firebase'
 import { useAuthStore } from './AuthStore'
 import { useRouter } from 'vue-router'
-import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { 
+  collection, 
+  addDoc, 
+  getDocs, 
+  getDoc, 
+  doc, 
+  updateDoc, 
+  deleteDoc,
+  query,
+  orderBy,
+  limit,
+  startAfter
+} from 'firebase/firestore'
 
 export const useCasingStore = defineStore('Casing', () => {
   // State
@@ -14,13 +26,16 @@ export const useCasingStore = defineStore('Casing', () => {
     price: 0,
     discount: 0,
     stock: 0,
-    imageBase64: '', // Menggunakan base64 string untuk gambar
+    imageBase64: '',
+    themes: [],
     isUpdate: false
   })
 
-  const formInput = ref(false)
-  const casingData = ref(null)
+  const casingData = ref([])
   const detailCasing = ref(null)
+  const lastDocument = ref(null)
+  const hasMore = ref(true)
+  const isLoading = ref(false)
 
   // Router
   const router = useRouter()
@@ -38,7 +53,145 @@ export const useCasingStore = defineStore('Casing', () => {
     return originalPrice - discountAmount
   }
 
-  // Fungsi untuk mengkonversi file gambar ke base64
+  // Optimized data fetching with pagination
+  const fetchCasings = async (pageSize = 10, reset = false) => {
+    if (isLoading.value) return
+    isLoading.value = true
+
+    try {
+      let q
+      if (reset) {
+        // Reset the state for initial load
+        casingData.value = []
+        lastDocument.value = null
+        hasMore.value = true
+      }
+
+      if (lastDocument.value) {
+        // Fetch next page
+        q = query(
+          casingCollection, 
+          orderBy('createdAt', 'desc'), 
+          startAfter(lastDocument.value), 
+          limit(pageSize)
+        )
+      } else {
+        // First page
+        q = query(
+          casingCollection, 
+          orderBy('createdAt', 'desc'), 
+          limit(pageSize)
+        )
+      }
+
+      const snapshot = await getDocs(q)
+      
+      if (!snapshot.empty) {
+        const newCasings = snapshot.docs.map((doc) => {
+          const data = doc.data()
+          return {
+            ...data,
+            id: doc.id,
+            finalPrice: calculateFinalPrice(data.price, data.discount)
+          }
+        })
+
+        // Append or set new casings
+        if (reset) {
+          casingData.value = newCasings
+        } else {
+          casingData.value = [...casingData.value, ...newCasings]
+        }
+
+        // Update last document for next pagination
+        lastDocument.value = snapshot.docs[snapshot.docs.length - 1]
+        
+        // Check if we've reached the end of the collection
+        hasMore.value = snapshot.docs.length === pageSize
+      } else {
+        hasMore.value = false
+      }
+    } catch (error) {
+      console.error('Error fetching casings:', error)
+      hasMore.value = false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Cached computed properties for performance
+  const sortedCasings = computed(() => {
+    return [...casingData.value].sort((a, b) => b.createdAt - a.createdAt)
+  })
+
+  const totalCasingsCount = computed(() => casingData.value.length)
+
+  // Rest of the existing methods remain the same...
+  const handleSubmit = async (imageFile) => {
+    try {
+      let imageBase64 = casing.imageBase64;
+  
+      // Convert image to base64 if a new file is provided
+      if (imageFile) {
+        imageBase64 = await convertToBase64(imageFile);
+      }
+  
+      const casingData = {
+        name: casing.name,
+        description: casing.description,
+        price: Number(casing.price),
+        discount: Number(casing.discount),
+        finalPrice: calculateFinalPrice(Number(casing.price), Number(casing.discount)),
+        stock: Number(casing.stock),
+        imageBase64: imageBase64,
+        themes: casing.themes,
+        updatedAt: Date.now()
+      };
+  
+      if (casing.isUpdate) {
+        // Update Data
+        await updateDoc(doc(casingCollection, casing.id), casingData);
+        alert('Success updating casing');
+      } else {
+        // Add Data
+        casingData.createdAt = Date.now();
+        casingData.createdBy = {
+          id: authStore.currentUser.id,
+          name: authStore.currentUser.name,
+          email: authStore.currentUser.email
+        };
+  
+        await addDoc(casingCollection, casingData);
+        alert('Success adding new casing');
+      }
+  
+      // Fetch casings again to refresh the data in the store
+      await fetchCasings(10, true);
+      
+      // Reset the casing state
+      resetCasing();
+  
+      // Redirect or update UI as necessary
+      router.push({ name: 'CasingView' });
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      alert('Error processing casing data');
+    }
+  };
+  
+  // Reset the casing state after successful submission
+  const resetCasing = () => {
+    casing.id = '';
+    casing.name = '';
+    casing.description = '';
+    casing.price = 0;
+    casing.discount = 0;
+    casing.stock = 0;
+    casing.imageBase64 = '';
+    casing.themes = [];
+    casing.isUpdate = false;
+  };
+
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -48,118 +201,72 @@ export const useCasingStore = defineStore('Casing', () => {
     })
   }
 
-  const handleSubmit = async (imageFile) => {
+  const updateHandling = async (idParams) => {
     try {
-      let imageBase64 = casing.imageBase64
-
-      // Convert image ke base64 jika ada file baru
-      if (imageFile) {
-        imageBase64 = await convertToBase64(imageFile)
+      const docRef = doc(casingCollection, idParams)
+      const docSnap = await getDoc(docRef)
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data()
+        
+        // Reset dan isi ulang objek casing
+        Object.keys(casing).forEach(key => {
+          if (Object.prototype.hasOwnProperty.call(data, key)) {
+            casing[key] = data[key]
+          }
+        })
+        
+        // Set mode update
+        casing.isUpdate = true
+        casing.id = idParams
       }
-
-      const casingData = {
-        name: casing.name,
-        description: casing.description,
-        price: Number(casing.price),
-        discount: Number(casing.discount),
-        finalPrice: calculateFinalPrice(Number(casing.price), Number(casing.discount)),
-        stock: Number(casing.stock),
-        imageBase64: imageBase64,
-        updatedAt: Date.now()
-      }
-
-      if (casing.isUpdate) {
-        // Update Data
-        await updateDoc(doc(casingCollection, casing.id), casingData)
-        alert('Success updating casing')
-      } else {
-        // Add Data
-        casingData.createdAt = Date.now()
-        casingData.createdBy = {
-          id: authStore.currentUser.id,
-          name: authStore.currentUser.name,
-          email: authStore.currentUser.email
-        }
-
-        await addDoc(casingCollection, casingData)
-        alert('Success adding new casing')
-      }
-
-      router.push({ name: 'Casing' })
     } catch (error) {
-      console.error('Error in handleSubmit:', error)
-      alert('Error processing casing data')
+      console.error('Error fetching casing details:', error)
     }
   }
 
-  const allCasings = async () => {
-    const fetchedCasings = await getDocs(casingCollection)
-    casingData.value = fetchedCasings.docs
-      .map((doc) => {
-        const data = doc.data()
-        return {
-          ...data,
-          id: doc.id,
-          finalPrice: calculateFinalPrice(data.price, data.discount)
-        }
-      })
-      .sort((a, b) => b.createdAt - a.createdAt)
-  }
-
+  // Existing methods with minor modifications
   const detailHandling = async (idParams) => {
     const docRef = doc(casingCollection, idParams)
     const docDetail = await getDoc(docRef)
     detailCasing.value = { ...docDetail.data(), id: docDetail.id }
   }
 
-  const clearHandling = () => {
-    casing.id = ''
-    casing.name = ''
-    casing.description = ''
-    casing.price = 0
-    casing.discount = 0
-    casing.stock = 0
-    casing.imageBase64 = ''
-    casing.isUpdate = false
-  }
-
-  const updateHandling = async (idParams) => {
-    const docRef = doc(casingCollection, idParams)
-    const docDetail = await getDoc(docRef)
-    const data = docDetail.data()
-
-    casing.id = docRef.id
-    casing.name = data.name
-    casing.description = data.description
-    casing.price = data.price
-    casing.discount = data.discount
-    casing.stock = data.stock
-    casing.imageBase64 = data.imageBase64
-    casing.isUpdate = true
-  }
-
   const deleteHandling = async (idParams) => {
     try {
       await deleteDoc(doc(casingCollection, idParams))
       alert('Delete Casing Success')
-      allCasings()
+      
+      // Refresh data after deleting
+      await fetchCasings(10, true)
     } catch (error) {
       console.error('Error deleting casing:', error)
       alert('Error deleting casing')
     }
   }
 
+  // Reset method for clearing states
+  const resetStore = () => {
+    casingData.value = []
+    lastDocument.value = null
+    hasMore.value = true
+    isLoading.value = false
+  }
+
   return {
     casing,
-    formInput,
-    handleSubmit,
     casingData,
-    allCasings,
     detailCasing,
+    isLoading,
+    hasMore,
+    sortedCasings,
+    totalCasingsCount,
+    fetchCasings,
+    handleSubmit,
     detailHandling,
-    clearHandling,
     updateHandling,
     deleteHandling,
+    resetStore,
     calculateFinalPrice
   }
 })
