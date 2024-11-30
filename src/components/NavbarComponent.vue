@@ -1,4 +1,3 @@
-<!-- NavbarComponent.vue -->
 <template>
   <nav
     class="navbar"
@@ -16,10 +15,24 @@
     </div>
     
     <div class="navbar-menu" :class="{ 'is-active': isMenuOpen }">
-      <ul class="nav-links">
+      <!-- Desktop Navigation Links -->
+      <ul class="nav-links" v-if="!isMobile">
         <li><a href="#home" @click="closeMenu">Beranda</a></li>
         <li><a href="#products" @click="closeMenu">Produk</a></li>
         <li><a href="#testimoni" @click="closeMenu">Testimoni</a></li>
+      </ul>
+      
+      <!-- Mobile User Navigation Links (Only when logged in) -->
+      <ul v-else-if="isMobile && isLoggedIn" class="mobile-user-nav-links">
+        <li @click="openProfileModal">
+          Profile
+        </li>
+        <li @click="navigateToOrders">
+          Pesananku
+        </li>
+        <li @click="openLogoutModal">
+          Logout
+        </li>
       </ul>
       
       <!-- Login Button or User Avatar -->
@@ -28,13 +41,69 @@
           Login
         </router-link>
       </div>
-      <div v-else class="user-avatar" @click="toggleUserMenu">
-        <img 
-          :src="displayedPhoto" 
-          alt="User" 
-          class="avatar-image"
-        />
-        <div class="user-menu" v-if="showUserMenu">
+      <div v-else class="user-avatar-container">
+        <div class="user-avatar" @click="toggleUserMenu">
+          <img 
+            :src="displayedPhoto" 
+            alt="User" 
+            class="avatar-image"
+          />
+          <div class="mobile-dropdown-icon" v-if="isMobile">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+        
+        <!-- Mobile User Menu Dropdown -->
+        <div 
+          class="user-menu-mobile" 
+          v-if="isMobile && showUserMenu"
+          :class="{ 
+            'menu-enter': showUserMenu, 
+            'menu-exit': !showUserMenu,
+            'menu-visible': showUserMenu
+          }"
+        >
+          <div class="user-menu-mobile-content">
+            <div class="user-menu-header">
+              <img 
+                :src="displayedPhoto" 
+                alt="User" 
+                class="mobile-menu-avatar"
+              />
+              <div class="user-info">
+                <span class="user-name">{{ currentUser?.displayName || 'User' }}</span>
+                <span class="user-email">{{ currentUser?.email }}</span>
+              </div>
+              <button class="close-mobile-menu" @click="toggleUserMenu">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Existing Mobile User Menu -->
+            <ul class="mobile-user-menu-list">
+              <li @click="openProfileModal">
+                Profile
+              </li>
+              <li>
+                Settings
+              </li>
+              <li @click="openLogoutModal">
+                Logout
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Desktop User Menu -->
+        <div 
+          v-if="!isMobile && showUserMenu" 
+          class="user-menu"
+        >
           <ul>
             <li @click="openProfileModal">Profile</li>
             <li>Settings</li>
@@ -68,7 +137,7 @@ import { auth, db } from '@/config/firebase'
 import ModalProfile from './ModalProfileComponent.vue'
 import LogoutModal from './LogoutModalComponent.vue'
 
-const defaultAvatar = '/images/default-avatar.png'
+import defaultAvatar from '../image/default-avatar.png'
 
 const authStore = useAuthStore()
 const { isLoggedIn, currentUser } = storeToRefs(authStore)
@@ -82,6 +151,13 @@ const showUserMenu = ref(false)
 const userProfilePhoto = ref(null)
 const showProfileModal = ref(false)
 const showLogoutModal = ref(false)
+const isMobile = ref(false)
+
+// Check if it's mobile view
+const checkMobileView = () => {
+  const newIsMobile = window.innerWidth <= 768
+  isMobile.value = newIsMobile
+}
 
 // Computed property untuk menampilkan foto
 const displayedPhoto = computed(() => {
@@ -101,6 +177,11 @@ const closeMenu = () => {
 
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value
+  
+  // Add/remove no-scroll for mobile menu
+  if (isMobile.value) {
+    document.body.classList.toggle('no-scroll', showUserMenu.value)
+  }
 }
 
 // Profile modal controls
@@ -180,12 +261,15 @@ const handleProfileUpdate = () => {
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
   window.addEventListener('profile-updated', handleProfileUpdate)
+  window.addEventListener('resize', checkMobileView)
   fetchUserProfilePhoto()
+  checkMobileView() // Initial check
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('profile-updated', handleProfileUpdate)
+  window.removeEventListener('resize', checkMobileView)
 })
 </script>
 
@@ -371,12 +455,151 @@ onUnmounted(() => {
   background: #f5f5f5;
 }
 
+/* Mobile User Menu Styles */
+.user-avatar-container {
+  position: relative;
+}
+
+.mobile-dropdown-icon {
+  display: none;
+}
+
+.user-menu-mobile {
+  display: none;
+}
+
+.mobile-user-nav-links {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-user-nav-links li {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.mobile-user-nav-links li:hover {
+  background-color: #f5f5f5;
+}
+
+.nav-icon {
+  margin-right: 15px;
+  font-size: 1.2rem;
+}
+
 @media (max-width: 768px) {
-  .user-menu {
+  .navbar-menu {
+    justify-content: flex-start;
+    padding-top: 80px; /* Sesuaikan dengan tinggi navbar */
+  }
+}
+
+@media (max-width: 768px) {
+  .user-avatar-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .user-avatar {
+    display: flex;
+    align-items: center;
+  }
+
+  .user-menu-mobile {
     position: fixed;
-    top: auto;
-    bottom: 20px;
-    right: 20px;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-in-out;
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .user-menu-mobile.menu-visible {
+    transform: translateY(0);
+  }
+
+  .user-menu-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+  }
+
+  .mobile-menu-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #f0f0f0;
+  }
+
+  .user-info {
+    flex-grow: 1;
+  }
+
+  .user-name {
+    display: block;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .user-email {
+    display: block;
+    color: #777;
+    font-size: 0.85rem;
+  }
+
+  .close-mobile-menu {
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+
+  .close-mobile-menu:hover {
+    opacity: 1;
+  }
+
+  .mobile-user-menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .mobile-user-menu-list li {
+    padding: 12px 0;
+    border-top: 1px solid #f0f0f0;
+    color: #333;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+
+  .mobile-user-menu-list li:first-child {
+    border-top: none;
+  }
+
+  .mobile-user-menu-list li:hover {
+    color: #007bff;
   }
 }
 </style>

@@ -285,7 +285,7 @@ body {
 
 .catalog-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; 
   align-items: center;
   margin-bottom: 2.5rem;
   padding-bottom: 1rem;

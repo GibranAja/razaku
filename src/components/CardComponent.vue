@@ -20,7 +20,7 @@ const props = defineProps({
 });
 
 const router = useRouter();
-
+  
 const navigateTo = () => {
   const route = `/case/${props.title.toLowerCase()}`;
   router.push(route);
