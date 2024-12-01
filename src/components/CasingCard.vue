@@ -14,7 +14,7 @@
             {{ formatCurrency(casing.finalPrice) }}
           </span>
         </div>
-        <div class="card-themes" v-if="casing.themes && casing.themes.length">
+        <div class="card-themes" v-if="casing.themes?.length">
           <span 
             class="theme-tag" 
             v-for="theme in casing.themes" 
