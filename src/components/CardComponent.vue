@@ -1,3 +1,4 @@
+<!-- CardComponent.vue -->
 <template>
   <div class="card-container" @click="navigateTo">
     <div class="card">
@@ -22,8 +23,10 @@ const props = defineProps({
 const router = useRouter();
   
 const navigateTo = () => {
-  const route = `/case/${props.title.toLowerCase()}`;
-  router.push(route);
+  router.push({
+    name: 'caseCategory',
+    params: { category: props.title }
+  });
 };
 </script>
   
