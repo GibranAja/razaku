@@ -1,20 +1,43 @@
 <template>
-  <div class="case-category-container">
-    <h1>{{ category }} Cases</h1>
-    <div class="casings-grid">
-      <CasingCard 
-        v-for="casing in filteredCasings" 
-        :key="casing.id" 
-        :casing="casing"
-      />
+  <div class="page-wrapper">
+    <NavbarComponent />
+    
+    <div class="case-category-container">
+      <!-- Show loader while loading -->
+      <div v-if="isLoading" class="loader-container">
+        <div class="loader"></div>
+      </div>
+
+      <!-- Show content when loaded -->
+      <template v-else>
+        <h1 class="judul">{{ category }} Cases</h1>
+        
+        <!-- No casings message -->
+        <div v-if="filteredCasings.length === 0" class="no-casings-message">
+          No Casings in this theme
+        </div>
+        
+        <div v-else class="casings-grid">
+          <CasingCard 
+            v-for="casing in filteredCasings" 
+            :key="casing.id" 
+            :casing="casing"
+          />
+        </div>
+      </template>
     </div>
+
+    <FooterComponent />
   </div>
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useCasingStore } from '@/store/CasingStore'
+import { useThemeStore } from '@/store/ThemeStore'
 import CasingCard from '@/components/CasingCard.vue'
+import FooterComponent from '@/components/FooterComponent.vue';
+import NavbarComponent from '@/components/NavbarComponent.vue';
 
 const props = defineProps({
   category: {
@@ -24,22 +47,39 @@ const props = defineProps({
 })
 
 const casingStore = useCasingStore()
+const themeStore = useThemeStore()
+const isLoading = ref(true)
+const themes = ref({})
 
-// Computed property to filter casings based on the theme
+// Fetch theme data and create a mapping
+const loadThemes = async () => {
+  try {
+    isLoading.value = true
+    await themeStore.fetchThemes(50)
+    themeStore.themeData.forEach(theme => {
+      themes.value[theme.id] = theme.name
+    })
+    await casingStore.resetStore()
+    await casingStore.fetchCasings(50)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+
 const filteredCasings = computed(() => {
-  // If the category is a theme, filter casings by that theme
   return casingStore.casingData.filter(casing => 
-    casing.themes.some(theme => 
-      theme.toLowerCase() === props.category.toLowerCase()
+    casing.themes?.some(themeId => 
+      themes.value[themeId]?.toLowerCase() === props.category.toLowerCase()
     )
   )
 })
 
-// Fetch casings when component is mounted
 onMounted(async () => {
-  // Reset any previous data and fetch fresh
+  window.scrollTo(0, 0)
+  await loadThemes()
   await casingStore.resetStore()
-  await casingStore.fetchCasings(50) // Fetch more items to ensure we get all casings
+  await casingStore.fetchCasings(50)
 })
 </script>
 
@@ -52,5 +92,28 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 20px;
+}
+
+.judul {
+  margin-top: 7rem;
+  margin-bottom: 2rem;
+}
+
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.case-category-container {
+  flex: 1;
+  padding: 20px;
+}
+
+.no-casings-message {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #666;
+  margin: 40px 0;
 }
 </style>
