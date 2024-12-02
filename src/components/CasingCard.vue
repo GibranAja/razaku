@@ -1,5 +1,5 @@
 <template>
-  <div class="casing-card" @click="navigateToCasingDetail">
+  <div class="casing-card" @click="$emit('click', casing)">
     <div class="card">
       <div class="card-image-container">
         <img :src="casing.imageBase64" :alt="casing.name" class="card-image">
@@ -29,31 +29,20 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-
-const props = defineProps({
+defineProps({
   casing: {
     type: Object,
     required: true
   }
 })
 
-const router = useRouter()
+defineEmits(['click'])
 
-// Currency formatting method
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR'
   }).format(value)
-}
-
-// Navigate to casing detail page
-const navigateToCasingDetail = () => {
-  router.push({ 
-    name: 'casingDetail', 
-    params: { id: props.casing.id } 
-  })
 }
 </script>
 
