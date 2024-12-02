@@ -18,10 +18,19 @@
         </div>
         
         <div v-else class="casings-grid">
+
+          <ModalDetailCasing 
+            :show="showModal"
+            :casing="selectedCasing"
+            @close="closeModal"
+            v-if="selectedCasing"
+          />
+
           <CasingCard 
             v-for="casing in filteredCasings" 
             :key="casing.id" 
             :casing="casing"
+            @click="openModal(casing)"
           />
         </div>
       </template>
@@ -38,6 +47,7 @@ import { useThemeStore } from '@/store/ThemeStore'
 import CasingCard from '@/components/CasingCard.vue'
 import FooterComponent from '@/components/FooterComponent.vue';
 import NavbarComponent from '@/components/NavbarComponent.vue';
+import ModalDetailCasing from '@/components/ModalDetailCasing.vue';
 
 const props = defineProps({
   category: {
@@ -50,6 +60,8 @@ const casingStore = useCasingStore()
 const themeStore = useThemeStore()
 const isLoading = ref(true)
 const themes = ref({})
+const showModal = ref(false)
+const selectedCasing = ref(null)
 
 // Fetch theme data and create a mapping
 const loadThemes = async () => {
@@ -66,6 +78,14 @@ const loadThemes = async () => {
   }
 }
 
+const openModal = (casing) => {
+  selectedCasing.value = casing
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+}
 
 const filteredCasings = computed(() => {
   return casingStore.casingData.filter(casing => 
