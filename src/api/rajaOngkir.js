@@ -1,6 +1,8 @@
 // src/api/rajaOngkir.js
 const API_KEY = 'f5bbc8efa8f9454734a47ea7558f1737'
-const BASE_URL = '/api'
+const BASE_URL = import.meta.env.PROD 
+  ? 'https://api.rajaongkir.com/starter'  // Production URL
+  : '/api' // Development URL
 
 const cache = {
   provinces: null,
@@ -19,10 +21,14 @@ export const rajaOngkirApi = {
         return cache.provinces
       }
 
-      const response = await fetch(`${BASE_URL}/province`, {
+      // Add error handling for CORS
+      const options = {
         method: 'GET',
-        headers
-      })
+        headers: headers,
+        mode: import.meta.env.PROD ? 'cors' : 'same-origin'
+      }
+
+      const response = await fetch(`${BASE_URL}/province`, options)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)

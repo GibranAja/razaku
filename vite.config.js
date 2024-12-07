@@ -19,6 +19,9 @@ export default defineConfig({
         target: 'https://api.rajaongkir.com/starter',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        headers: {
+          'key': 'f5bbc8efa8f9454734a47ea7558f1737'
+        },
         configure: (proxy) => {
           proxy.on('error', (err) => {
             console.log('proxy error', err)
