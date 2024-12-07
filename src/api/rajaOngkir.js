@@ -1,7 +1,7 @@
 // src/api/rajaOngkir.js
 const API_KEY = 'f5bbc8efa8f9454734a47ea7558f1737'
 const BASE_URL = import.meta.env.PROD 
-  ? 'https://api.rajaongkir.com/starter'  // Production URL
+  ? '/api'  // Changed this line to use proxy in production
   : '/api' // Development URL
 
 const cache = {
