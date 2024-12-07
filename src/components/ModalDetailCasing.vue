@@ -33,6 +33,88 @@
                 <h3>Description</h3>
                 <p>{{ casing.description }}</p>
               </div>
+
+              <!-- Location Selection -->
+              <div class="location-section">
+                <h3>Shipping Location</h3>
+                
+                <!-- Province Dropdown -->
+                <div class="form-group">
+                  <label>Province</label>
+                  <div v-if="shippingStore.loading" class="loading-spinner">Loading...</div>
+                  <select 
+                    v-else
+                    v-model="selectedProvince" 
+                    class="location-select"
+                    @change="handleProvinceChange"
+                  >
+                    <option value="">Select Province</option>
+                    <option 
+                      v-for="prov in provinces" 
+                      :key="prov.province_id" 
+                      :value="prov.province_id"
+                    >
+                      {{ prov.province }}
+                    </option>
+                  </select>
+                  <span v-if="shippingStore.error" class="error-message">
+                    {{ shippingStore.error }}
+                  </span>
+                </div>
+    
+                <!-- City Dropdown -->
+                <div class="form-group">
+                  <label>City</label>
+                  <div v-if="shippingStore.loading" class="loading-spinner">Loading...</div>
+                  <select 
+                    v-else
+                    v-model="selectedCity" 
+                    class="location-select"
+                    :disabled="!selectedProvince"
+                    @change="handleCityChange"
+                  >
+                    <option value="">Select City</option>
+                    <option 
+                      v-for="city in cities" 
+                      :key="city.city_id" 
+                      :value="city"
+                    >
+                      {{ city.type }} {{ city.city_name }}
+                    </option>
+                  </select>
+                </div>
+    
+                <!-- Address Details -->
+                <div class="form-group">
+                  <label>Detailed Address</label>
+                  <textarea 
+                    v-model="addressDetails"
+                    placeholder="Enter your complete address..."
+                    class="address-textarea"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Update the shipping cost section -->
+              <div class="shipping-cost-section" v-if="selectedCity">
+                <h3>Order Summary</h3>
+                <div class="order-summary">
+                  <div class="summary-item">
+                    <span>Product Price</span>
+                    <span>{{ formatPrice(casing.finalPrice) }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span>Shipping Cost</span>
+                    <span>{{ formatPrice(shippingCost) }}</span>
+                  </div>
+                  <div class="summary-divider"></div>
+                  <div class="summary-item total">
+                    <span>Total</span>
+                    <span>{{ formatPrice(totalPrice) }}</span>
+                  </div>
+                </div>
+              </div>
   
               <!-- Action Buttons -->
               <div class="action-buttons">
@@ -52,7 +134,11 @@
   </template>
   
   <script setup>
-  defineProps({
+  import { ref, onMounted, computed } from 'vue'
+  import { useShippingStore } from '@/store/ShippingStore'
+  
+  const shippingStore = useShippingStore()
+  const props = defineProps({
     show: {
       type: Boolean,
       default: false
@@ -63,12 +149,57 @@
     }
   })
   
+  // Add new refs for location data
+  const provinces = ref([])
+  const cities = ref([])
+  const selectedProvince = ref('')
+  const selectedCity = ref({})
+  const addressDetails = ref('')
+  
+  
   defineEmits(['close'])
   
+  // Add new methods for handling location
+  const handleProvinceChange = async () => {
+  selectedCity.value = {}  // Reset selected city
+  if (selectedProvince.value) {
+    await shippingStore.fetchCities(selectedProvince.value) // Add this line
+    cities.value = shippingStore.cities
+  }
+}
+
+  // Add computed property for shipping cost
+  const shippingCost = computed(() => shippingStore.calculateShippingCost)
+  
+  // Add computed property for total price
+  const totalPrice = computed(() => {
+    return (props.casing.finalPrice || 0) + (shippingCost.value || 0)
+  })
+  
+  // Update handleCitySelection
+  const handleCityChange = () => {
+  const selectedCityData = cities.value.find(city => city.city_id === selectedCity.value.city_id)
+  if (selectedCityData) {
+    // Update the local ref with the full city data
+    selectedCity.value = selectedCityData
+    // Update the store
+    shippingStore.setSelectedCity(selectedCityData)
+  }
+}
+  
+  // Fetch provinces on mount
+  onMounted(async () => {
+    await shippingStore.fetchProvinces()
+    provinces.value = shippingStore.province
+  })
+  
+  // Keep existing price formatter
   const formatPrice = (price) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'IDR'
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(price)
   }
   </script>
@@ -183,6 +314,90 @@
     color: #666;
     line-height: 1.6;
   }
+
+  .location-section {
+    margin-top: 1.5rem;
+    border-top: 1px solid #eee;
+    padding-top: 1.5rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .location-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+    font-size: 1rem;
+    color: #333;
+    transition: border-color 0.3s ease;
+  }
+  
+  .location-select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+  
+  .location-select:focus {
+    outline: none;
+    border-color: #000033;
+  }
+  
+  .address-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.3s ease;
+  }
+  
+  .address-textarea:focus {
+    outline: none;
+    border-color: #000033;
+  }
+
+  .shipping-cost-section {
+    margin-top: 0.2rem;
+    padding-top: 0.2rem;
+    border-top: 1px solid #eee;
+  }
+
+  .order-summary {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+  }
+
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .summary-divider {
+    border-top: 1px solid #ddd;
+    margin: 0.5rem 0;
+  }
+
+  .summary-item.total {
+    font-weight: 600;
+    color: #000033;
+    font-size: 1.1rem;
+  }
   
   .action-buttons {
     display: flex;
@@ -240,5 +455,26 @@
       box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
       margin: 0;
     }
+
+    .location-section {
+      margin-bottom: 80px; /* Add space for fixed action buttons */
+    }
+
+    .shipping-cost-section {
+      margin-bottom: 80px; /* Add space for fixed action buttons */
+    }
+  }
+
+  /* Add these styles */
+  .loading-spinner {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-message {
+    color: red;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
   }
   </style>
