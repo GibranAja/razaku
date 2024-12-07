@@ -118,7 +118,10 @@
   
               <!-- Action Buttons -->
               <div class="action-buttons">
-                <button class="cart-btn" title="Add to Cart">
+                <button 
+                  class="cart-btn" 
+                  title="Add to Cart"
+                >
                   <i class="fas fa-shopping-cart"></i>
                 </button>
                 <button class="checkout-btn" title="Checkout Now">

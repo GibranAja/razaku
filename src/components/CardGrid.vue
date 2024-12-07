@@ -45,14 +45,15 @@ const loadMoreThemes = () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  position: relative; /* Tambahkan ini */
-  min-height: 30px; /* Opsional, untuk memastikan ruang untuk loader */
+  position: relative;
+  min-height: 30px;
 }
 
 .cards-grid {
   display: grid;
-  gap: 20px;
+  gap: 15px;
   justify-content: center;
+  grid-template-columns: repeat(2, minmax(140px, 1fr)); /* Base mobile layout - 2 columns */
 }
 
 .loading,
@@ -70,12 +71,15 @@ const loadMoreThemes = () => {
   cursor: pointer;
 }
 
+/* Tablet and up */
 @media (min-width: 768px) {
   .cards-grid {
+    gap: 20px;
     grid-template-columns: repeat(2, minmax(250px, 1fr));
   }
 }
 
+/* Desktop and up */
 @media (min-width: 1024px) {
   .cards-grid {
     grid-template-columns: repeat(3, minmax(250px, 1fr));
