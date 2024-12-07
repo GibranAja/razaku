@@ -111,7 +111,19 @@ const router = createRouter({
       name: 'notFound',
       component: NotFoundView
     }
-  ]
+  ],
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    }
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth'
+      }
+    }
+    return { top: 0, behavior: 'smooth' }
+  }
 })
 
 // Navigation guard global yang lebih komprehensif

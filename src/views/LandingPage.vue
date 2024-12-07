@@ -17,10 +17,10 @@
           </p>
         </div>
       </div>
-      <div class="content-container">
+      <div id="products" class="content-container">
         <h1 style="font-size: 2rem; padding-top: 1.2rem">Our Casing</h1>
+        <CardGrid />
       </div>
-      <CardGrid />
     </main>
     <footer>
       <FooterComponent />
