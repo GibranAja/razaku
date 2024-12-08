@@ -28,6 +28,40 @@
               </span>
             </div>
 
+            <!-- Add this after the price-section div -->
+            <div class="quantity-section">
+              <h3>Quantity</h3>
+              <div class="quantity-control">
+                <button
+                  class="quantity-btn"
+                  @click="decrementQuantity"
+                  :disabled="quantity <= 1"
+                  :class="{ disabled: quantity <= 1 }"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+
+                <input
+                  type="number"
+                  v-model.number="quantity"
+                  class="quantity-input"
+                  :max="casing.stock"
+                  :min="1"
+                  @input="quantity = Math.min(Math.max($event.target.value, 1), casing.stock)"
+                />
+
+                <button
+                  class="quantity-btn"
+                  @click="incrementQuantity"
+                  :disabled="quantity >= casing.stock"
+                  :class="{ disabled: quantity >= casing.stock }"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <span class="stock-info">{{ casing.stock }} items available</span>
+            </div>
+
             <!-- Description -->
             <div class="description-section">
               <h3>Description</h3>
@@ -97,8 +131,8 @@
               <h3>Order Summary</h3>
               <div class="order-summary">
                 <div class="summary-item">
-                  <span>Product Price</span>
-                  <span>{{ formatPrice(casing.finalPrice) }}</span>
+                  <span>Product Price (x{{ quantity }})</span>
+                  <span>{{ formatPrice(casing.finalPrice * quantity) }}</span>
                 </div>
                 <div class="summary-item">
                   <span>Shipping Cost</span>
@@ -138,10 +172,11 @@
     :total-amount="totalPrice"
     :order-data="{
       casing,
+      quantity: quantity,
       shippingCost,
       totalAmount: totalPrice,
       shippingAddress: {
-        province: provinces.find(p => p.province_id === selectedProvince)?.province,
+        province: provinces.find((p) => p.province_id === selectedProvince)?.province,
         city: selectedCity.city_name,
         details: addressDetails
       }
@@ -153,10 +188,12 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import ModalBuying from './ModalBuying.vue';
+import ModalBuying from './ModalBuying.vue'
 import { useShippingStore } from '@/store/ShippingStore'
+import { useToast } from 'vue-toastification';
 
 const shippingStore = useShippingStore()
+const toast = useToast()
 const props = defineProps({
   show: {
     type: Boolean,
@@ -192,7 +229,7 @@ const shippingCost = computed(() => shippingStore.calculateShippingCost)
 
 // Add computed property for total price
 const totalPrice = computed(() => {
-  return (props.casing.finalPrice || 0) + (shippingCost.value || 0)
+  return props.casing.finalPrice * quantity.value + (shippingCost.value || 0)
 })
 
 // Update handleCitySelection
@@ -230,8 +267,29 @@ const isShippingComplete = computed(() => {
 })
 
 // Add the handleCheckout method
-const handleCheckout = () => {
+const handleCheckout = async () => {
+  // Check if requested quantity is still available
+  if (quantity.value > props.casing.stock) {
+    toast.error('Sorry, not enough stock available.')
+    return
+  }
   showBuyingModal.value = true
+}
+
+// In ModalDetailCasing.vue after the existing refs
+const quantity = ref(1) // Default quantity is 1
+
+// Add helper methods for quantity
+const incrementQuantity = () => {
+  if (quantity.value < props.casing.stock) {
+    quantity.value++
+  }
+}
+
+const decrementQuantity = () => {
+  if (quantity.value > 1) {
+    quantity.value--
+  }
 }
 </script>
 
@@ -333,6 +391,73 @@ const handleCheckout = () => {
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.875rem;
+}
+
+/* Add this after the price-section div */
+.quantity-section {
+  margin-top: 1.5rem;
+}
+
+.quantity-section h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.quantity-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quantity-btn:hover:not(.disabled) {
+  background: #f5f5f5;
+  border-color: #000033;
+  color: #000033;
+}
+
+.quantity-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}
+
+.quantity-input {
+  width: 60px;
+  height: 36px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1rem;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stock-info {
+  display: block;
+  color: #666;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 }
 
 .description-section h3 {

@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { collection, addDoc } from 'firebase/firestore'
+import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/config/firebase'
 import { useAuthStore } from './AuthStore'
 import { useToast } from 'vue-toastification'
@@ -12,10 +12,31 @@ export const useOrderStore = defineStore('order', () => {
   const authStore = useAuthStore()
   const toast = useToast()
 
+  const updateCasingStock = async (casingId, quantity) => {
+    const casingRef = doc(db, 'casings', casingId)
+    const casingSnap = await getDoc(casingRef)
+    
+    if (casingSnap.exists()) {
+      const currentStock = casingSnap.data().stock
+      const newStock = currentStock - quantity
+      
+      if (newStock < 0) {
+        throw new Error('Not enough stock available')
+      }
+      
+      await updateDoc(casingRef, {
+        stock: newStock
+      })
+    }
+  }
+
   const createOrder = async (orderData) => {
     isProcessing.value = true
     
     try {
+      // Check and update stock first
+      await updateCasingStock(orderData.casing.id, orderData.quantity)
+      
       // Create order document in Firestore
       const orderCollection = collection(db, 'orders')
       const order = {
@@ -24,6 +45,7 @@ export const useOrderStore = defineStore('order', () => {
         userEmail: authStore.currentUser.email,
         casingId: orderData.casing.id,
         casingName: orderData.casing.name,
+        quantity: orderData.quantity,
         price: orderData.casing.finalPrice,
         shippingCost: orderData.shippingCost,
         totalAmount: orderData.totalAmount,
@@ -43,7 +65,11 @@ export const useOrderStore = defineStore('order', () => {
 
     } catch (error) {
       console.error('Error creating order:', error)
-      toast.error('Failed to process order. Please try again.')
+      if (error.message === 'Not enough stock available') {
+        toast.error('Sorry, not enough stock available.')
+      } else {
+        toast.error('Failed to process order. Please try again.')
+      }
       return false
       
     } finally {
