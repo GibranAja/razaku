@@ -87,11 +87,11 @@
             Cancel Order
           </button>
           <button 
-            @click="updateOrderStatus('processing')"
+            @click="updateOrderStatus(selectedOrder?.status === 'processing' ? 'delivery' : 'processing')"
             class="process-btn"
             :disabled="isProcessing"
           >
-            Process Order
+            {{ selectedOrder?.status === 'processing' ? 'Mark as Delivery' : 'Process Order' }}
           </button>
         </div>
 
@@ -266,7 +266,28 @@ const confirmReject = async () => {
 }
 
 const openPaymentProof = (imageUrl) => {
-  window.open(imageUrl, '_blank')
+  // Create a link element
+  const link = document.createElement('a')
+  link.href = imageUrl
+  link.target = '_blank'
+  
+  if (imageUrl.startsWith('data:image')) {
+    // Create a new window/tab and write the image as HTML content
+    const newWindow = window.open()
+    newWindow.document.write(`
+      <html>
+        <head>
+          <title>Payment Proof</title>
+        </head>
+        <body style="margin:0;display:flex;justify-content:center;align-items:center;background:#f1f1f1;">
+          <img src="${imageUrl}" style="max-width:100%;max-height:100vh;object-fit:contain;" />
+        </body>
+      </html>
+    `)
+    newWindow.document.close()
+  } else {
+    link.click()
+  }
 }
 
 onMounted(() => {
@@ -325,6 +346,12 @@ onMounted(() => {
 .status-badge.processing {
   background-color: #DBEAFE;
   color: #1E40AF;
+}
+
+
+.status-badge.delivery {
+  background-color: #f4e0ff; /* Light indigo background */
+  color: #a838ca; /* Darker indigo text */
 }
 
 .status-badge.cancelled {
