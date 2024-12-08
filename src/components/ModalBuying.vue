@@ -51,10 +51,10 @@
         <!-- Confirm Button -->
         <button 
           class="confirm-btn"
-          :disabled="!paymentProof"
-          @click="confirmPayment"
+          :disabled="!paymentProof || isProcessing"
+          @click="handleConfirmation"
         >
-          Confirm Payment
+          {{ isProcessing ? 'Processing...' : 'Confirm Payment' }}
         </button>
       </div>
     </div>
@@ -63,18 +63,25 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useOrderStore } from '@/store/OrderStore';
 
-defineProps({
+const props = defineProps({
   totalAmount: {
     type: Number,
+    required: true
+  },
+  orderData: {
+    type: Object,
     required: true
   }
 });
 
-const emit = defineEmits(['close', 'confirm']);
+const emit = defineEmits(['close']);
 
+const orderStore = useOrderStore();
 const paymentProof = ref(null);
 const fileInput = ref(null);
+const isProcessing = ref(false);
 
 const formatPrice = (value) => {
   return new Intl.NumberFormat('id-ID', {
@@ -95,8 +102,22 @@ const handleFileUpload = (event) => {
   }
 };
 
-const confirmPayment = () => {
-  emit('confirm', paymentProof.value);
+const handleConfirmation = async () => {
+  if (!paymentProof.value) return;
+
+  isProcessing.value = true;
+
+  const orderData = {
+    ...props.orderData,
+    paymentProof: paymentProof.value
+  };
+
+  const success = await orderStore.createOrder(orderData);
+  if (success) {
+    emit('close');
+  }
+
+  isProcessing.value = false;
 };
 </script>
 

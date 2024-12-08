@@ -136,6 +136,16 @@
   <ModalBuying
     v-if="showBuyingModal"
     :total-amount="totalPrice"
+    :order-data="{
+      casing,
+      shippingCost,
+      totalAmount: totalPrice,
+      shippingAddress: {
+        province: provinces.find(p => p.province_id === selectedProvince)?.province,
+        city: selectedCity.city_name,
+        details: addressDetails
+      }
+    }"
     @close="showBuyingModal = false"
     @confirm="handlePaymentConfirmation"
   />
