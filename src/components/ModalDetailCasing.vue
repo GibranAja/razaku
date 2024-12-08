@@ -154,12 +154,12 @@
               <button
                 class="checkout-btn"
                 title="Checkout Now"
-                :disabled="!isShippingComplete"
-                :class="{ disabled: !isShippingComplete }"
+                :disabled="isCheckoutDisabled"
+                :class="{ disabled: isCheckoutDisabled }"
                 @click="handleCheckout"
               >
                 <i class="fas fa-shopping-bag"></i>
-                Checkout Now
+                {{ isAuthenticated ? 'Checkout Now' : 'Login to Checkout' }}
               </button>
             </div>
           </div>
@@ -191,9 +191,11 @@ import { ref, onMounted, computed } from 'vue'
 import ModalBuying from './ModalBuying.vue'
 import { useShippingStore } from '@/store/ShippingStore'
 import { useToast } from 'vue-toastification';
+import { useAuthStore } from '@/store/AuthStore'
 
 const shippingStore = useShippingStore()
 const toast = useToast()
+const authStore = useAuthStore()
 const props = defineProps({
   show: {
     type: Boolean,
@@ -268,6 +270,11 @@ const isShippingComplete = computed(() => {
 
 // Add the handleCheckout method
 const handleCheckout = async () => {
+  if (!isAuthenticated.value) {
+    toast.error('Please login to continue with checkout')
+    return
+  }
+
   // Check if requested quantity is still available
   if (quantity.value > props.casing.stock) {
     toast.error('Sorry, not enough stock available.')
@@ -291,6 +298,16 @@ const decrementQuantity = () => {
     quantity.value--
   }
 }
+
+// Add this computed property 
+const isAuthenticated = computed(() => {
+  return authStore.isLoggedIn
+})
+
+// Add this computed property to control button state
+const isCheckoutDisabled = computed(() => {
+  return !isShippingComplete.value || !isAuthenticated.value
+})
 </script>
 
 <style scoped>
