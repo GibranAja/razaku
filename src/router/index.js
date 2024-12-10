@@ -7,6 +7,7 @@ import CaseCategory from '../views/CaseCategory.vue'
 import LoginPage from '../views/LoginPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import NotFoundView from '../views/error/NotFoundView.vue'
+import MyOrder from '../views/MyOrder.vue'
 
 // Layout
 import AdminLayout from '../layouts/AdminLayout.vue'
@@ -36,6 +37,11 @@ const router = createRouter({
       path: '/',
       name: 'Home',
       component: LandingPage
+    },
+    {
+      path: '/orders',
+      name: 'Orders',
+      component: MyOrder
     },
     {
       path: '/case/:category',
