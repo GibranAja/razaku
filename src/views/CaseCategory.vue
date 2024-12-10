@@ -17,7 +17,7 @@
           No Casings in this theme
         </div>
         
-        <div v-else class="casings-grid">
+        <div v-else class="cards-grid">
 
           <ModalDetailCasing 
             :show="showModal"
@@ -135,5 +135,39 @@ onMounted(async () => {
   font-size: 1.2rem;
   color: #666;
   margin: 40px 0;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns for mobile */
+  gap: 8px; /* Small gap for mobile */
+  padding: 8px;
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .cards-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    gap: 16px;
+    padding: 16px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .cards-grid {
+    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+    gap: 24px;
+    padding: 24px;
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1280px) {
+  .cards-grid {
+    grid-template-columns: repeat(5, 1fr); /* 5 columns */
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 }
 </style>

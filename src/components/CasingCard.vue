@@ -72,7 +72,7 @@ const formatCurrency = (value) => {
 }
 
 .casing-card:not(.out-of-stock):hover {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .out-of-stock {
@@ -87,12 +87,26 @@ const formatCurrency = (value) => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .card-image-container {
-  height: 250px;
+  height: 150px; /* Reduced height for mobile */
   overflow: hidden;
   position: relative;
+}
+
+@media (min-width: 768px) {
+  .card-image-container {
+    height: 200px; /* Larger height for tablets */
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-image-container {
+    height: 250px; /* Original height for desktop */
+  }
 }
 
 .out-of-stock-overlay {
@@ -124,44 +138,95 @@ const formatCurrency = (value) => {
 }
 
 .card-details {
-  padding: 15px;
+  padding: 8px; /* Reduced padding for mobile */
   flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
 
 .card-title {
-  margin: 0 0 10px 0;
-  font-size: 1.2rem;
+  margin: 0 0 4px 0;
+  font-size: 0.9rem; /* Smaller font for mobile */
+  font-weight: 600;
+  /* Prevent text overflow */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.2;
 }
 
 .card-price {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  flex-direction: column; /* Stack prices on mobile */
+  gap: 2px;
+  margin-bottom: 4px;
 }
 
 .original-price {
   text-decoration: line-through;
   color: #888;
+  font-size: 0.8rem;
 }
 
 .final-price {
   font-weight: bold;
   color: #000;
+  font-size: 0.95rem;
 }
 
 .card-themes {
   display: flex;
-  gap: 5px;
-  margin-top: auto;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .theme-tag {
   background-color: #f0f0f0;
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+/* Tablet and up adjustments */
+@media (min-width: 768px) {
+  .card-details {
+    padding: 12px;
+  }
+
+  .card-title {
+    font-size: 1rem;
+  }
+
+  .card-price {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .original-price {
+    font-size: 0.9rem;
+  }
+
+  .final-price {
+    font-size: 1.1rem;
+  }
+
+  .theme-tag {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+  }
+}
+
+/* Add touch-friendly tap targets for mobile */
+@media (max-width: 767px) {
+  .card {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 </style>
