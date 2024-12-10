@@ -1,8 +1,15 @@
 <template>
-  <div class="casing-card" @click="$emit('click', casing)">
+  <div 
+    class="casing-card" 
+    :class="{ 'out-of-stock': isOutOfStock }"
+    @click="handleClick"
+  >
     <div class="card">
       <div class="card-image-container">
         <img :src="casing.imageBase64" :alt="casing.name" class="card-image">
+        <div v-if="isOutOfStock" class="out-of-stock-overlay">
+          <span>Out of Stock</span>
+        </div>
       </div>
       <div class="card-details">
         <h3 class="card-title">{{ casing.name }}</h3>
@@ -29,14 +36,26 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   casing: {
     type: Object,
     required: true
   }
 })
 
-defineEmits(['click'])
+const emit = defineEmits(['click'])
+
+const isOutOfStock = computed(() => {
+  return props.casing.stock <= 0
+})
+
+const handleClick = () => {
+  if (!isOutOfStock.value) {
+    emit('click', props.casing)
+  }
+}
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('id-ID', {
@@ -52,8 +71,13 @@ const formatCurrency = (value) => {
   transition: transform 0.3s ease;
 }
 
-.casing-card:hover {
+.casing-card:not(.out-of-stock):hover {
   transform: scale(1.05);
+}
+
+.out-of-stock {
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .card {
@@ -68,8 +92,31 @@ const formatCurrency = (value) => {
 .card-image-container {
   height: 250px;
   overflow: hidden;
+  position: relative;
 }
 
+.out-of-stock-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.out-of-stock-overlay span {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Rest of the existing styles remain the same */
 .card-image {
   width: 100%;
   height: 100%;
