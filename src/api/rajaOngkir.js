@@ -1,8 +1,9 @@
 // src/api/rajaOngkir.js
 const API_KEY = 'f5bbc8efa8f9454734a47ea7558f1737'
+// Gunakan full URL untuk production
 const BASE_URL = import.meta.env.PROD 
-  ? '/api'  // Changed this line to use proxy in production
-  : '/api' // Development URL
+  ? '/razakuu/proxy.php'  // Use PHP proxy in production
+  : '/api'
 
 const cache = {
   provinces: null,
@@ -11,7 +12,7 @@ const cache = {
 
 const headers = {
   'key': API_KEY,
-  'content-type': 'application/json'
+  'Content-Type': 'application/json'
 }
 
 export const rajaOngkirApi = {
@@ -21,14 +22,10 @@ export const rajaOngkirApi = {
         return cache.provinces
       }
 
-      // Add error handling for CORS
-      const options = {
+      const response = await fetch(`${BASE_URL}/province`, {
         method: 'GET',
-        headers: headers,
-        mode: import.meta.env.PROD ? 'cors' : 'same-origin'
-      }
-
-      const response = await fetch(`${BASE_URL}/province`, options)
+        headers
+      })
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -41,7 +38,7 @@ export const rajaOngkirApi = {
 
     } catch (error) {
       console.error('Province fetch error:', error)
-      throw new Error('Failed to fetch provinces')
+      throw error
     }
   },
 

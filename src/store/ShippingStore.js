@@ -67,17 +67,17 @@ export const useShippingStore = defineStore('shipping', () => {
     
     loading.value = true
     error.value = null
-    cities.value = [] // Reset cities when province changes
+    cities.value = []
 
     try {
       const response = await rajaOngkirApi.getCities(provinceId)
-      
       if (response?.rajaongkir?.status?.code === 200) {
         cities.value = response.rajaongkir.results
       } else {
         throw new Error('Invalid API response')
       }
     } catch (err) {
+      console.error('Error fetching cities:', err)
       error.value = err.message
       cities.value = []
     } finally {

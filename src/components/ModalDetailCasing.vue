@@ -104,7 +104,7 @@
                   v-else
                   v-model="selectedCity"
                   class="location-select"
-                  :disabled="!selectedProvince"
+                  :disabled="!selectedProvince || shippingStore.loading"
                   @change="handleCityChange"
                 >
                   <option value="">Select City</option>
@@ -221,10 +221,16 @@ const emit = defineEmits(['close'])
 
 // Add new methods for handling location
 const handleProvinceChange = async () => {
-  selectedCity.value = {} // Reset selected city
+  cities.value = []
+  selectedCity.value = null
   if (selectedProvince.value) {
-    await shippingStore.fetchCities(selectedProvince.value) // Add this line
-    cities.value = shippingStore.cities
+    try {
+      await shippingStore.fetchCities(selectedProvince.value)
+      cities.value = shippingStore.cities
+    } catch (error) {
+      console.error('Error fetching cities:', error)
+      toast.error('Failed to load cities')
+    }
   }
 }
 
@@ -249,8 +255,14 @@ const handleCityChange = () => {
 
 // Fetch provinces on mount
 onMounted(async () => {
-  await shippingStore.fetchProvinces()
-  provinces.value = shippingStore.province
+  try {
+    await shippingStore.resetStore() // Reset store first
+    await shippingStore.fetchProvinces()
+    provinces.value = shippingStore.province
+  } catch (error) {
+    console.error('Error fetching provinces:', error)
+    toast.error('Failed to load provinces. Please try again.')
+  }
 })
 
 // Keep existing price formatter
