@@ -25,7 +25,7 @@
       <!-- Mobile User Navigation Links (Only when logged in) -->
       <ul v-else-if="isMobile && isLoggedIn" class="mobile-user-nav-links">
         <li @click="openProfileModal">Profile</li>
-        <li @click="navigateToOrders">Pesananku</li>
+        <li><router-link to="/orders">Pesananku</router-link></li>
         <li @click="openLogoutModal">Logout</li>
       </ul>
 
@@ -87,7 +87,6 @@
             <!-- Existing Mobile User Menu -->
             <ul class="mobile-user-menu-list">
               <li @click="openProfileModal">Profile</li>
-              <li>Settings</li>
               <li @click="openLogoutModal">Logout</li>
             </ul>
           </div>
@@ -97,7 +96,6 @@
         <div v-if="!isMobile && showUserMenu" class="user-menu">
           <ul>
             <li @click="openProfileModal">Profile</li>
-            <li>Settings</li>
             <li @click="openLogoutModal">Logout</li>
           </ul>
         </div>
