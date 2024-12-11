@@ -23,10 +23,36 @@
       </ul>
 
       <!-- Mobile User Navigation Links (Only when logged in) -->
+      <!-- In your template section, update the mobile navigation links -->
       <ul v-else-if="isMobile && isLoggedIn" class="mobile-user-nav-links">
-        <li @click="openProfileModal">Profile</li>
-        <li><router-link to="/orders">Pesananku</router-link></li>
-        <li @click="openLogoutModal">Logout</li>
+        <li>
+          <router-link to="/" exact>
+            <div class="nav-item-content">
+              <i class="nav-icon fas fa-home"></i>
+              <span class="nav-label">Beranda</span>
+            </div>
+          </router-link>
+        </li>
+        <li>
+          <router-link to="/orders">
+            <div class="nav-item-content">
+              <i class="nav-icon fas fa-shopping-bag"></i>
+              <span class="nav-label">Pesananku</span>
+            </div>
+          </router-link>
+        </li>
+        <li @click="openProfileModal">
+          <div class="nav-item-content">
+            <i class="nav-icon fas fa-user"></i>
+            <span class="nav-label">Profile</span>
+          </div>
+        </li>
+        <li @click="openLogoutModal">
+          <div class="nav-item-content">
+            <i class="nav-icon fas fa-sign-out-alt"></i>
+            <span class="nav-label">Logout</span>
+          </div>
+        </li>
       </ul>
 
       <!-- Login Button or User Avatar -->
@@ -34,21 +60,27 @@
         <router-link to="/login" class="login-btn" @click="closeMenu"> Login </router-link>
       </div>
       <div v-else class="user-avatar-container">
-        <div class="user-avatar" @click="toggleUserMenu">
-          <img :src="displayedPhoto" alt="User" class="avatar-image" />
-          <div class="mobile-dropdown-icon" v-if="isMobile">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+        <div class="user-controls">
+          <router-link to="/cart" class="cart-button">
+            <i class="fas fa-shopping-cart"></i>
+            <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
+          </router-link>
+          <div class="user-avatar" @click="toggleUserMenu">
+            <img :src="displayedPhoto" alt="User" class="avatar-image" />
           </div>
+        </div>
+        <div class="mobile-dropdown-icon" v-if="isMobile">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
         </div>
 
         <!-- Mobile User Menu Dropdown -->
@@ -250,7 +282,7 @@ const scrollToTop = () => {
 const scrollToProducts = () => {
   const productsSection = document.querySelector('#products')
   if (productsSection) {
-    productsSection.scrollIntoView({ 
+    productsSection.scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     })
@@ -625,6 +657,146 @@ onUnmounted(() => {
 
   .mobile-user-menu-list li:hover {
     color: #007bff;
+  }
+}
+/* Mobile Navigation Links */
+.mobile-user-nav-links {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 1rem 0;
+}
+
+.mobile-user-nav-links li {
+  position: relative;
+  display: flex;
+  align-items: center; /* Vertical center alignment */
+  min-height: 48px; /* Consistent height for all items */
+  padding: 0.5rem 1.5rem;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.mobile-user-nav-links a {
+  position: relative;
+  display: flex;
+  align-items: center; /* Vertical center alignment */
+  width: 100%;
+  min-height: 48px; /* Consistent height for all items */
+  padding: 0 1.5rem;
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* Navigation icons and labels container */
+.nav-item-content {
+  display: flex;
+  align-items: center; /* Vertical center alignment */
+  gap: 16px; /* Consistent spacing between icon and text */
+  width: 100%; /* Full width to allow proper alignment */
+}
+
+.nav-icon {
+  display: flex; /* Enable flex for the icon */
+  align-items: center; /* Center icon vertically */
+  justify-content: center; /* Center icon horizontally */
+  font-size: 1.2rem;
+  width: 24px; /* Fixed width for consistent alignment */
+  height: 24px; /* Fixed height to match width */
+  color: #666;
+  transition: color 0.3s ease;
+  flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.nav-label {
+  font-weight: 500;
+  line-height: 1.2; /* Consistent line height */
+  margin: 0; /* Remove any default margins */
+}
+
+/* Active state styles remain the same but ensure consistent spacing */
+.mobile-user-nav-links a.router-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background-color: #000033;
+  border-radius: 0 4px 4px 0;
+}
+
+@media (max-width: 768px) {
+  .navbar-menu.is-active {
+    padding-top: 0;
+  }
+
+  .mobile-user-nav-links {
+    margin-top: 0;
+  }
+
+  /* Improve touch targets on mobile */
+  .mobile-user-nav-links a,
+  .mobile-user-nav-links li {
+    min-height: 56px; /* Larger touch targets for mobile */
+  }
+}
+
+.user-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cart-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  color: #000033;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.cart-button:hover {
+  background: #e0e0e0;
+  transform: translateY(-2px);
+}
+
+.cart-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ff4444;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* Update existing mobile styles */
+@media (max-width: 768px) {
+  .user-controls {
+    gap: 0.75rem;
+  }
+
+  .cart-button {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
   }
 }
 </style>
