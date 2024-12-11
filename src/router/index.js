@@ -8,6 +8,7 @@ import LoginPage from '../views/LoginPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import NotFoundView from '../views/error/NotFoundView.vue'
 import MyOrder from '../views/MyOrder.vue'
+import CartView from '../views/CartView.vue'
 
 // Layout
 import AdminLayout from '../layouts/AdminLayout.vue'
@@ -42,6 +43,11 @@ const router = createRouter({
       path: '/orders',
       name: 'Orders',
       component: MyOrder
+    },
+    {
+      path: '/cart',
+      name: 'Cart',
+      component: CartView
     },
     {
       path: '/case/:category',
