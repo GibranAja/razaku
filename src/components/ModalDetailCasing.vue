@@ -192,10 +192,12 @@ import ModalBuying from './ModalBuying.vue'
 import { useShippingStore } from '@/store/ShippingStore'
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '@/store/AuthStore'
+import { useCartStore } from '@/store/CartStore'
 
 const shippingStore = useShippingStore()
 const toast = useToast()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 const props = defineProps({
   show: {
     type: Boolean,
@@ -215,7 +217,7 @@ const selectedProvince = ref('')
 const selectedCity = ref({})
 const addressDetails = ref('')
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
 
 // Add new methods for handling location
 const handleProvinceChange = async () => {
@@ -308,6 +310,19 @@ const isAuthenticated = computed(() => {
 const isCheckoutDisabled = computed(() => {
   return !isShippingComplete.value || !isAuthenticated.value
 })
+
+// Add this method to handle adding to cart
+const handleAddToCart = async () => {
+  if (!isAuthenticated.value) {
+    toast.error('Please login to add items to cart')
+    return
+  }
+
+  const success = await cartStore.addToCart(props.casing, quantity.value)
+  if (success) {
+    emit('close') // Close modal after successful add
+  }
+}
 </script>
 
 <style scoped>
