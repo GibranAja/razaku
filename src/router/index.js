@@ -138,17 +138,20 @@ const router = createRouter({
   }
 })
 
-// Navigation guard global yang lebih komprehensif
+// Navigation guard
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // Cegah SEMUA pengguna yang sudah login mengakses halaman login/register
   if ((to.path === '/login' || to.path === '/register') && authStore.isLoggedIn) {
-    next({ name: 'Home' })
+    if (authStore.currentUser?.isAdmin) {
+      next({ name: 'DashboardAdmin' })
+    } else {
+      next({ name: 'Home' })
+    }
     return
   }
 
-  // Cek jika rute membutuhkan autentikasi admin
+  // Check admin routes
   if (to.matched.some(record => record.meta.requiresAdmin)) {
     if (!authStore.isLoggedIn || !authStore.currentUser?.isAdmin) {
       next({ name: 'notFound' })

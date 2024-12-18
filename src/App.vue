@@ -1,21 +1,35 @@
 <template>
-  <div>
-    <RouterView v-if="!authStore.isLoading" />
-    <div v-else class="loader-container">
-      <div class="loader"></div>
-    </div>
+  <div id="app">
+    <Suspense>
+      <template #default>
+        <RouterView v-if="!authStore.isLoading" />
+      </template>
+      <template #fallback>
+        <div class="loader-container">
+          <div class="loader"></div>
+        </div>
+      </template>
+    </Suspense>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, onErrorCaptured } from 'vue'
 import { useAuthStore } from '@/store/AuthStore.js'
 import { RouterView } from 'vue-router'
+import { useToast } from 'vue-toastification'
 
 const authStore = useAuthStore()
+const toast = useToast()
 
-onMounted(() => {
-  authStore.initializeAuthState()
+onMounted(async () => {
+  await authStore.initializeAuthState()
+})
+
+onErrorCaptured((error) => {
+  console.error('Application error:', error)
+  toast.error('An error occurred. Please try again.')
+  return false
 })
 </script>
 
